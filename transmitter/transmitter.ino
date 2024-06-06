@@ -3,7 +3,8 @@
 #define BUTTON_PIN 4
 #define LED_PIN 2
 #define MY_ADDRESS 1301
-#define DESTINATION_ADDRESS 1302 
+// #define DESTINATION_ADDRESS 1302 
+#define DESTINATION_ADDRESS 1400 // test receiver
 #define BROADCAST_ADDRESS 0
 
 /********** AT COMMAND SET ************
