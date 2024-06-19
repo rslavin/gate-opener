@@ -10,7 +10,7 @@
 #define BUTTON1_PIN 5
 #define BUTTON2_PIN 8
 #define LED_PIN 9
-#define LORA_RST_PIN 10
+// #define LORA_RST_PIN 10
 #define WAKE_DURATION 4000
 
 
@@ -24,8 +24,6 @@ Adafruit_FlashTransport_QSPI flashTransport;
 
 
 void setup() {
-  pinMode(LORA_RST_PIN, OUTPUT);
-  digitalWrite(LORA_RST_PIN, HIGH); // release LoRA rst pin
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
 
@@ -83,10 +81,12 @@ void setup() {
 
   // shut it down
   digitalWrite(LED_PIN, LOW);
-  digitalWrite(LORA_RST_PIN, LOW);
   flashTransport.begin();
   flashTransport.runCommand(0xB9);
   flashTransport.end();
+  Serial1.end();
+  Serial.end();
+  // the following sequence optimizes power
   __WFI();
   __SEV();
   __WFI();
