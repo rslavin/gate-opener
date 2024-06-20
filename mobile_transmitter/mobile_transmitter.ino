@@ -10,7 +10,6 @@
 #define BUTTON1_PIN 5
 #define BUTTON2_PIN 8
 #define LED_PIN 9
-// #define LORA_RST_PIN 10
 #define WAKE_DURATION 4000
 
 

@@ -1,5 +1,6 @@
 #include <HardwareSerial.h>
 #include <vector>
+#include <queue>
 
 // LoRa
 #define MY_ADDRESS 1301
@@ -61,6 +62,9 @@ unsigned short currentThreshold = GATE_CURRENT_THRESHOLD;
 
 // List of allowed addresses
 std::vector<int> allowedAddresses;
+std::queue<String> messageQueue;
+std::queue<String> pendingMessages;
+bool awaitingResponse = false;
 
 void addAddress(int address) { allowedAddresses.push_back(address); }
 
@@ -70,8 +74,18 @@ void listenForSignal();
 
 void sendMessage(String msg, String address = String(SERVER_ADDRESS)) {
   String fullMsg = "AT+SEND=" + address + "," + String(msg.length()) + "," + msg;
-  Serial.printf("Sending message \"%s\" to %s\n", fullMsg.c_str(), address.c_str());
-  Serial1.println(fullMsg);
+  Serial.printf("Queing message \"%s\" to %s\n", fullMsg.c_str(), address.c_str());
+  pendingMessages.push(fullMsg);
+}
+
+void processPendingMessages() {
+  if (!awaitingResponse && !pendingMessages.empty()) {
+    String msg = pendingMessages.front();
+    pendingMessages.pop();
+    Serial.printf("Sending message \"%s\"\n", msg.c_str());
+    Serial1.println(msg);
+    awaitingResponse = true;
+  }
 }
 
 void setup() {
@@ -209,6 +223,7 @@ void handleButtonPress() {
 
 void loop() {
   listenForSignal();
+  processPendingMessages();
 
   // lock gate after unlockTime seconds from being unlocked
   if (currentState == OPENING && !isLocked && ((millis() - unlockTimestamp) >= (unlockTime * 1000))) {
@@ -242,6 +257,8 @@ void listenForSignal() {  // check for remote trigger
     String incomingData = Serial1.readStringUntil('\n');
     Serial.println("Message received: " + incomingData);
     if (incomingData.startsWith("+OK") || incomingData.startsWith("+ERR") || incomingData.length() == 0) {
+      awaitingResponse = false;
+      processPendingMessages();
       return;
     }
 
