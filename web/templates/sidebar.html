@@ -1,16 +1,31 @@
-<div class="sidebar">
-    <ul>
-        {% if current_user.is_authenticated %}
-        <li><a href="{{ url_for('main.home') }}">Open Gate</a></li>
-        {% endif %}
-        <li><a href="{{ url_for('main.code_page') }}">Enter Code</a></li>
-        {% if current_user.is_authenticated and (current_user.role == Role.TRUSTED_USER or current_user.role == Role.ADMIN) %}
-        <li><a href="{{ url_for('main.grant_access') }}">Temporary Codes</a></li>
-        {% endif %}
-        {% if current_user.is_authenticated and current_user.role == Role.ADMIN %}
-        <li><a href="{{ url_for('admin.admin') }}">Admin</a></li>
-        {% endif %}
-        <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
-    </ul>
-</div>
-
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasExample" aria-controls="offcanvasExample">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <a class="navbar-brand" href="#">{% if title %} {{ title }} {% endif %}</a>
+        </div>
+    </nav>
+<div class="d-flex">
+        <div class="content flex-grow-1 p-3">
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+                <div class="offcanvas-header">
+                    <h5 class="offcanvas-title" id="offcanvasExampleLabel">Menu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <div class="list-group list-group-flush">
+                        {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('main.home') }}" class="list-group-item list-group-item-action">Open Gate</a>
+                        {% endif %}
+                        <a href="{{ url_for('main.code_page') }}" class="list-group-item list-group-item-action">Enter Code</a>
+                        {% if current_user.is_authenticated and (current_user.role == Role.TRUSTED_USER or current_user.role == Role.ADMIN) %}
+                        <a href="{{ url_for('main.grant_access') }}" class="list-group-item list-group-item-action">Temporary Codes</a>
+                        {% endif %}
+                        {% if current_user.is_authenticated and current_user.role == Role.ADMIN %}
+                        <a href="{{ url_for('admin.admin') }}" class="list-group-item list-group-item-action">Admin</a>
+                        {% endif %}
+                        <a href="{{ url_for('auth.logout') }}" class="list-group-item list-group-item-action">Logout</a>
+                    </div>
+                </div>
+            </div>

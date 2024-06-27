@@ -1,17 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Welcome</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+{% include 'header.html' %}
 </head>
 <body>
     {% include 'sidebar.html' %}
-    <h1>Welcome, {{ current_user.username }}</h1>
-    <div class="button-container">
-        <button id="openGateButton">Open Gate</button>
+    <div class="container d-flex flex-column justify-content-center align-items-center full-height">
+        <h1>Welcome, {{ current_user.username }}</h1>
+        <div class="button-container mt-3">
+            <button id="openGateButton" class="btn btn-primary btn-huge">Open Gate</button>
+        </div>
+        <div id="message" class="mt-3"></div>
     </div>
-    <div id="message"></div>
 
     <script>
         document.getElementById('openGateButton').addEventListener('click', function() {
@@ -23,23 +20,28 @@
                 const button = document.getElementById('openGateButton');
                 const message = document.getElementById('message');
                 if (data.message === 'Gate opened') {
-                    button.style.backgroundColor = 'green';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-success');
                     message.textContent = data.message;
                 } else {
-                    button.style.backgroundColor = 'red';
+                    button.classList.remove('btn-primary');
+                    button.classList.add('btn-danger');
                     message.textContent = 'Error: Could not open the gate';
                 }
                 setTimeout(() => {
-                    button.style.backgroundColor = '';
+                    button.classList.remove('btn-success', 'btn-danger');
+                    button.classList.add('btn-primary');
                     message.textContent = '';
                 }, 2000);
             })
             .catch(error => {
                 const button = document.getElementById('openGateButton');
-                button.style.backgroundColor = 'red';
+                button.classList.remove('btn-primary');
+                button.classList.add('btn-danger');
                 document.getElementById('message').textContent = 'Error: Could not open the gate';
                 setTimeout(() => {
-                    button.style.backgroundColor = '';
+                    button.classList.remove('btn-danger');
+                    button.classList.add('btn-primary');
                     document.getElementById('message').textContent = '';
                 }, 2000);
             });

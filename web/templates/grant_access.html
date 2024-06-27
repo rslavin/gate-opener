@@ -1,39 +1,85 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporary Codes</title>
+{% include 'header.html' %}
 </head>
 <body>
-    {% include 'sidebar.html' %}
-    <div class="content">
-        <h1>Create Code</h1>
-        <form method="POST" action="{{ url_for('main.grant_access') }}">
-            <label for="code">Code (optional):</label>
-            <input type="text" id="code" name="code">
-            <label for="duration">Duration (hours):</label>
-            <input type="number" id="duration" name="duration" value="24" required>
-            <label for="note">Note (optional):</label>
-            <input type="text" id="note" name="note">
-            <button type="submit">Generate Code</button>
-        </form>
-
-        <h2>Current Access Codes</h2>
-        <ul>
-            {% for code in codes %}
-            <li>
-                <strong>Code:</strong> <a href="{{ url_for('main.code_page', code=code.code, _external=True) }}">{{ code.code }}</a> <br>
-                <strong>Note:</strong> {{ code.note }} <br>
-                <strong>Expires At:</strong> {{ code.expires_at }} <br>
-                <strong>Created By:</strong> {{ code.creator.username }} <br>
-                <form method="POST" action="{{ url_for('main.delete_code', code_id=code.id) }}" style="display:inline;">
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
-            {% endfor %}
-        </ul>
+{% include 'sidebar.html' %}
+{% if new_token %}
+<div class="modal fade" id="new-token-modal" tabindex="-1" aria-labelledby="new-token-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="new-token-modal-title">Temporary Code Created</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <strong>Code:</strong> <a href="{{ url_for('main.code_page', code=new_token.code, _external=True) }}">{{
+                new_token.code }}</a> <br>
+                <strong>Link:</strong> <a href="{{ url_for('main.code_page', _external=True) }}">{{ url_for('main.code_page', code=new_token.code, _external=True) }}</a> <br>
+                {% if new_token.note %}
+                <strong>Note:</strong> {{ new_token.note }} <br>
+                {% endif %}
+                <strong>Expires At:</strong> {{ new_token.expires_at.strftime('%B %d, %Y, %H:%M:%S') }} <br>
+                <strong>Created By:</strong> {{ new_token.creator.username }} <br>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
     </div>
+</div>
+
+{% endif %}
+<div class="container mt-5">
+    <h1>Create Code</h1>
+    <form method="POST" action="{{ url_for('main.grant_access') }}" class="row g-3">
+        <div class="col-md-6 offset-md-3">
+            <div class="mb-3">
+                <label for="code" class="form-label">Code (optional):</label>
+                <input type="text" id="code" name="code" class="form-control">
+            </div>
+            <div class="mb-3">
+                <label for="duration" class="form-label">Duration (hours):</label>
+                <input type="number" id="duration" name="duration" value="24" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label for="note" class="form-label">Note (optional):</label>
+                <input type="text" id="note" name="note" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Generate Code</button>
+        </div>
+    </form>
+
+    <h2 class="mt-5">Current Access Codes</h2>
+    <ul class="list-group">
+        {% for code in codes %}
+        <li class="list-group-item">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>Code:</strong> <a href="{{ url_for('main.code_page', code=code.code, _external=True) }}">{{
+                    code.code }}</a> <br>
+                    {% if code.note %}
+                    <strong>Note:</strong> {{ code.note }} <br>
+                    {% endif %}
+                    <strong>Expires At:</strong> {{ code.expires_at.strftime('%B %d, %Y, %H:%M:%S') }} <br>
+                    <strong>Created By:</strong> {{ code.creator.username }} <br>
+                </div>
+                <div>
+                    <form method="POST" action="{{ url_for('main.delete_code', code_id=code.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
 </body>
+{% if new_token %}
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            var myModal = new bootstrap.Modal(document.getElementById('new-token-modal'));
+            myModal.show();
+        });
+    </script>
+{% endif %}
 </html>

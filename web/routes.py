@@ -35,10 +35,11 @@ def grant_access():
         access_code = Token(code=code, note=note, expires_at=expires_at, created_by=current_user.id)
         db.session.add(access_code)
         db.session.commit()
-        return redirect(url_for('main.grant_access'))
+        codes = Token.query.order_by(Token.expires_at.asc()).all()
+        return render_template('grant_access.html', codes=codes, title="Temporary Codes", new_token=access_code)
 
-    codes = Token.query.all()
-    return render_template('grant_access.html', codes=codes)
+    codes = Token.query.order_by(Token.expires_at.asc()).all()
+    return render_template('grant_access.html', codes=codes, title="Temporary Codes")
 
 @main_blueprint.route('/delete_code/<int:code_id>', methods=['POST'])
 @roles_required(Role.TRUSTED_USER, Role.ADMIN)
@@ -60,7 +61,7 @@ def code_page(code=''):
             remaining_time = token.expires_at - datetime.datetime.utcnow()
             return jsonify({'message': 'Gate opened', 'response': response, 'time_left': str(remaining_time)}), 200
         return jsonify({'message': 'Invalid or expired code'}), 401
-    return render_template('code.html', code=code)
+    return render_template('code.html', code=code, title="Enter Code")
 
 @auth_blueprint.route('/login', methods=['GET', 'POST'])
 def login():
@@ -73,7 +74,7 @@ def login():
             return redirect(url_for('main.home'))
         else:
             return jsonify({'message': 'Login unsuccessful. Please check username and password'}), 401
-    return render_template('login.html')
+    return render_template('login.html', title="Login")
 
 @auth_blueprint.route('/logout')
 @login_required
@@ -97,7 +98,7 @@ def admin():
 
     users = User.query.all()
     roles = Role
-    return render_template('admin.html', users=users, roles=roles)
+    return render_template('admin.html', users=users, roles=roles, title="Admin")
 
 @admin_blueprint.route('/delete_user/<int:user_id>', methods=['POST'])
 @role_required(Role.ADMIN)
