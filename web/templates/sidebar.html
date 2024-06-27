@@ -1,13 +1,16 @@
 <div class="sidebar">
     <ul>
-        <li><a href="{{ url_for('code_page') }}">Code</a></li>
+        {% if current_user.is_authenticated %}
+        <li><a href="{{ url_for('main.home') }}">Open Gate</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('main.code_page') }}">Enter Code</a></li>
         {% if current_user.is_authenticated and (current_user.role == Role.TRUSTED_USER or current_user.role == Role.ADMIN) %}
-        <li><a href="{{ url_for('grant_access') }}">Grant Access</a></li>
+        <li><a href="{{ url_for('main.grant_access') }}">Temporary Codes</a></li>
         {% endif %}
         {% if current_user.is_authenticated and current_user.role == Role.ADMIN %}
-        <li><a href="{{ url_for('admin') }}">Admin</a></li>
+        <li><a href="{{ url_for('admin.admin') }}">Admin</a></li>
         {% endif %}
-        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+        <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
     </ul>
 </div>
 

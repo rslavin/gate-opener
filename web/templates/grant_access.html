@@ -4,31 +4,31 @@
     <meta charset="UTF-8">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grant Access</title>
+    <title>Temporary Codes</title>
 </head>
 <body>
     {% include 'sidebar.html' %}
     <div class="content">
-        <h1>Grant Access</h1>
-        <form method="POST" action="{{ url_for('grant_access') }}">
+        <h1>Create Code</h1>
+        <form method="POST" action="{{ url_for('main.grant_access') }}">
             <label for="code">Code (optional):</label>
             <input type="text" id="code" name="code">
             <label for="duration">Duration (hours):</label>
-            <input type="number" id="duration" name="duration" required>
+            <input type="number" id="duration" name="duration" value="24" required>
             <label for="note">Note (optional):</label>
             <input type="text" id="note" name="note">
-            <button type="submit">Grant Access</button>
+            <button type="submit">Generate Code</button>
         </form>
 
         <h2>Current Access Codes</h2>
         <ul>
             {% for code in codes %}
             <li>
-                <strong>Code:</strong> {{ code.code }} <br>
+                <strong>Code:</strong> <a href="{{ url_for('main.code_page', code=code.code, _external=True) }}">{{ code.code }}</a> <br>
                 <strong>Note:</strong> {{ code.note }} <br>
                 <strong>Expires At:</strong> {{ code.expires_at }} <br>
                 <strong>Created By:</strong> {{ code.creator.username }} <br>
-                <form method="POST" action="{{ url_for('delete_code', code_id=code.id) }}" style="display:inline;">
+                <form method="POST" action="{{ url_for('main.delete_code', code_id=code.id) }}" style="display:inline;">
                     <button type="submit">Delete</button>
                 </form>
             </li>
