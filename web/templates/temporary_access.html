@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Temporary Gate Access</title>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+</head>
+<body>
+    <h1>Temporary Gate Access</h1>
+    <p id="timer"></p>
+    <button id="openButton">Open Gate</button>
+
+    <script>
+        const token = "{{ token }}";
+        document.getElementById('openButton').addEventListener('click', () => {
+            fetch(`/temporary_open/${token}`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            });
+        });
+
+        // Countdown timer (assuming max_age is 3600 seconds)
+        let timeLeft = 3600;
+        const timerElement = document.getElementById('timer');
+        const timer = setInterval(() => {
+            if (timeLeft <= 0) {
+                clearInterval(timer);
+                timerElement.textContent = "Access expired";
+            } else {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerElement.textContent = `Access expires in ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timeLeft--;
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
+

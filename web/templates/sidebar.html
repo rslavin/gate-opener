@@ -1,0 +1,13 @@
+<div class="sidebar">
+    <ul>
+        <li><a href="{{ url_for('code_page') }}">Code</a></li>
+        {% if current_user.is_authenticated and (current_user.role == Role.TRUSTED_USER or current_user.role == Role.ADMIN) %}
+        <li><a href="{{ url_for('grant_access') }}">Grant Access</a></li>
+        {% endif %}
+        {% if current_user.is_authenticated and current_user.role == Role.ADMIN %}
+        <li><a href="{{ url_for('admin') }}">Admin</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+    </ul>
+</div>
+

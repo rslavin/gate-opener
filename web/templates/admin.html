@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        .sidebar {
+            width: 200px;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #f4f4f4;
+            padding-top: 20px;
+        }
+
+        .sidebar ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .sidebar ul li {
+            padding: 8px;
+            text-align: center;
+        }
+
+        .sidebar ul li a {
+            text-decoration: none;
+            color: black;
+            display: block;
+        }
+
+        .sidebar ul li a:hover {
+            background-color: #ddd;
+        }
+
+        .content {
+            margin-left: 220px;
+            padding: 20px;
+        }
+    </style>
+    <script>
+        function toggleUserList() {
+            var userList = document.getElementById('userList');
+            var toggleButton = document.getElementById('toggleButton');
+            if (userList.style.display === 'none') {
+                userList.style.display = 'block';
+                toggleButton.innerText = 'Hide Users';
+            } else {
+                userList.style.display = 'none';
+                toggleButton.innerText = 'Show Users';
+            }
+        }
+    </script>
+</head>
+<body>
+    {% include 'sidebar.html' %}
+    <div class="content">
+        <h1>Admin Dashboard</h1>
+        <h2>Add User</h2>
+        <form method="POST" action="{{ url_for('admin') }}">
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+            <label for="role">Role:</label>
+            <select id="role" name="role" required>
+                {% for role in roles %}
+                <option value="{{ role.value }}">{{ role.value.capitalize() }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit">Add User</button>
+        </form>
+        <h2>Users</h2>
+        <button id="toggleButton" onclick="toggleUserList()">Show Users</button>
+        <ul id="userList">
+            {% for user in users %}
+            <li>
+                {{ user.username }} - {{ user.role.value.capitalize() }}
+                <form method="POST" action="{{ url_for('delete_user', user_id=user.id) }}" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+                <form method="POST" action="{{ url_for('change_role', user_id=user.id) }}" style="display:inline;">
+                    <select name="role" required>
+                        {% for role in roles %}
+                        <option value="{{ role.value }}" {% if user.role == role %}selected{% endif %}>
+                            {{ role.value.capitalize() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit">Change Role</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

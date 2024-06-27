@@ -1,9 +1,16 @@
 #include <HardwareSerial.h>
+#include <Adafruit_NeoPixel.h>
 #include <vector>
 #include <queue>
 
-// LoRa
-#define MY_ADDRESS 1301
+#define DEBUG 0
+
+#if DEBUG == 1
+  #define MY_ADDRESS 1401
+#else
+  #define MY_ADDRESS 1301
+#endif
+
 #define SERVER_ADDRESS 1300
 
 // pins
@@ -12,10 +19,9 @@
 #define GATE_REVERSE_CURRENT_PIN 4
 #define GATE_REVERSE_PWM_PIN 7
 
-#define GATE_LIMIT_CLOSE_PIN 8
-#define GATE_LIMIT_OPEN_PIN 9
+#define GATE_LIMIT_CLOSE_PIN 5 //8 // TODO change to different pin; this one is for LED
+#define GATE_LIMIT_OPEN_PIN 6 //9 // TODO change to a different pin; this one causes mcu not to boot
 #define LOCK_PIN 10
-// #define GATE_LIMIT_PIN 9
 // #define MOTOR_LIMIT_PIN 8
 
 
@@ -23,8 +29,7 @@
 #define UNLOCK_TIME 5                 // time in seconds that the lock stays open
 #define STAY_OPEN_TIME 4              // time the gate stays open before closing again
 #define LIMIT_SWITCH_DEBOUNCE_TIME 1  // time after opening/closing that the limit switch is ignored
-
-#define GATE_CURRENT_THRESHOLD 819  // 4 amp threshold for overcurrent condition (for 10-bit ADC: 0-1023)
+#define LIGHT_TIME 2 // default time lights stay on for signals
 
 // messages
 #define SUCCESS_SETUP "101"
@@ -38,6 +43,11 @@
 #define ERROR_CLOSE_LIMNIT "305"
 #define REQUEST_FROM "901"
 #define REQUEST_DENIED "902"
+#define STATE_STOPPED "401"
+#define STATE_CLOSING "402"
+#define STATE_OPENING "403"
+#define STATE_CLOSED "404"
+#define STATE_OPEN "405"
 
 enum GateState {
   STOPPED,
@@ -47,28 +57,42 @@ enum GateState {
   OPEN,
 };
 
-bool ledState = false;
-String msg_sent;
-String msg_received;
+Adafruit_NeoPixel led = Adafruit_NeoPixel(1, 8, NEO_GRB + NEO_KHZ800);
+const int RED[] = {255, 0, 0};
+const int GREEN[] = {0, 255, 0};
+const int BLUE[] = {0, 0, 255};
+const int YELLOW[] = {255, 255, 0};
+const int ORANGE[] = {255, 165, 0};
+const int MAGENTA[] = {255, 0, 255};
+const int CYAN[] = {0, 255, 255};
+const int WHITE[] = {255, 255, 255};
+const int BLACK[] = {0, 0, 0};
+
+String msgReceived;
 GateState lastDirection = CLOSING;
 GateState currentState = CLOSED;
 bool isLocked = true;
 unsigned long unlockTimestamp = 0;
 unsigned long openTimestamp = 0;  // time at which the gate reaches open position
-unsigned short gateSpeedPercent = GATE_SPEED_PERCENT;
+unsigned long ledOffTimestamp = 0;
+// use defines as defaults, but keep these mutable so I can change them remotely later
 unsigned short unlockTime = UNLOCK_TIME;
 unsigned short stayOpenTime = STAY_OPEN_TIME;
-unsigned short currentThreshold = GATE_CURRENT_THRESHOLD;
+unsigned short ledTime = LIGHT_TIME;
+unsigned short gateSpeedPercent = GATE_SPEED_PERCENT;
 
-// List of allowed addresses
 std::vector<int> allowedAddresses;
 std::queue<String> messageQueue;
 std::queue<String> pendingMessages;
 bool awaitingResponse = false;
 
-void addAddress(int address) { allowedAddresses.push_back(address); }
+void addAddress(int address) { 
+  allowedAddresses.push_back(address); 
+}
 
-void setAddresses(const std::vector<int>& addresses) { allowedAddresses = addresses; }
+void setAddresses(const std::vector<int>& addresses) { 
+  allowedAddresses = addresses;
+}
 
 void listenForSignal();
 
@@ -76,6 +100,17 @@ void sendMessage(String msg, String address = String(SERVER_ADDRESS)) {
   String fullMsg = "AT+SEND=" + address + "," + String(msg.length()) + "," + msg;
   Serial.printf("Queing message \"%s\" to %s\n", fullMsg.c_str(), address.c_str());
   pendingMessages.push(fullMsg);
+}
+
+void setLedColor(const int rgb[]) {
+  led.setPixelColor(0, rgb[0], rgb[1], rgb[2]);
+  led.show();
+}
+
+void timedLed(const int rgb[], unsigned short seconds = ledTime) {
+  setLedColor(rgb);
+  ledOffTimestamp = millis();
+  ledTime = seconds;
 }
 
 void processPendingMessages() {
@@ -89,6 +124,9 @@ void processPendingMessages() {
 }
 
 void setup() {
+  led.begin();
+  led.setBrightness(100);
+  setLedColor(BLUE);
   // motor driver pin modes
   pinMode(GATE_FORWARD_CURRENT_PIN, INPUT);
   pinMode(GATE_FORWARD_PWM_PIN, OUTPUT);
@@ -109,46 +147,64 @@ void setup() {
   Serial1.begin(115200, SERIAL_8N1);  // UART TX/RX pins
 
   Serial.println("Waiting for serial");
-  while (!Serial || !Serial1) {
+  while (!Serial1 || ( DEBUG && !Serial)){     
     delay(10);
   }
 
+  setLedColor(MAGENTA);
   Serial.println("Setting local address to " + String(MY_ADDRESS));
-  Serial1.println("AT+ADDRESS=" + String(MY_ADDRESS));
-  delay(1000);
+  Serial1.println("AT+ADDRESS=" + String(MY_ADDRESS));  
+  Serial1.flush();
   Serial1.println("AT+ADDRESS?");
 
-  while (true) {
-    msg_received = Serial1.readStringUntil('\n');
-    if (msg_received && msg_received.indexOf("+OK") >= 0) {
-      Serial.print("Success: ");
-      Serial.println(msg_received);
+  while(1){
+    unsigned long startTime = millis();
+    while (Serial1.available() == 0) {      
+      if (millis() - startTime > 500) { // Timeout after 500ms
+        setLedColor(BLACK);
+        Serial.println("Timeout waiting for `AT+ADDRESS?` response. Sending command again.");
+        Serial1.println("AT+ADDRESS?"); 
+        break;
+      }
+      setLedColor(MAGENTA);
+    }
+    msgReceived = Serial1.readStringUntil('\n');
+  
+    if (msgReceived.startsWith("+ADDRESS=" + String(MY_ADDRESS))) {
+      Serial.print("Success:");
+      Serial.println(msgReceived);
       break;
     } else {
-      Serial.println("[WARNING] Failed to set transceiver address. Trying again.");
-      ESP.restart();
+      Serial.print("ERROR: ");
+      Serial.println(msgReceived);
     }
+    Serial.println("LoRa unavailable, trying again");
   }
+
   addAddress(SERVER_ADDRESS);
   addAddress(1311);
   addAddress(1312);
   addAddress(1313);
   addAddress(1314);
   sendMessage(SUCCESS_SETUP);
+  setLedColor(GREEN);
+  delay(1000);
+  setLedColor(BLACK);
+
 }
 
 int percentageToDutyCycle(int percentage) {
   if (percentage < 0) {
-    percentage = 0;  // Ensure the percentage is not negative
+    percentage = 0;
   } else if (percentage > 100) {
-    percentage = 100;  // Cap the percentage at 100%
+    percentage = 100; 
   }
 
   return map(percentage, 0, 100, 0, 255);
 }
 
 void unlock() {
-  Serial.println("Unlocking gate");
+  Serial.println("Unlocking");
   sendMessage("Unlocking");
   digitalWrite(LOCK_PIN, HIGH);
   isLocked = false;
@@ -157,13 +213,16 @@ void unlock() {
 }
 
 void lock() {
-  Serial.println("Locking gate");
+  Serial.println("Locking");
+  sendMessage("Locking");
   digitalWrite(LOCK_PIN, LOW);
   isLocked = true;
+  delay(200); // stops false LOW reading on gate limit pins
 }
 
 void openGate() {
   if (digitalRead(GATE_LIMIT_OPEN_PIN) != LOW) {
+    setLedColor(GREEN);
     Serial.println("Opening gate");
     sendMessage("Opening");
     digitalWrite(GATE_REVERSE_PWM_PIN, LOW);
@@ -173,11 +232,13 @@ void openGate() {
   } else {
     Serial.println("Attempted to open gate when it is already open");
     sendMessage("Attempted to open gate when it is already open");
+    closeGate();
   }
 }
 
 void closeGate() {
   if (digitalRead(GATE_LIMIT_CLOSE_PIN) != LOW) {
+    setLedColor(RED);
     Serial.println("Closing gate");
     sendMessage("Closing");
     digitalWrite(GATE_FORWARD_PWM_PIN, LOW);
@@ -187,10 +248,12 @@ void closeGate() {
   } else {
     Serial.println("Attempted to close gate when it is already closed");
     sendMessage("Attempted to close gate when it is already closed");
+    openGate();
   }
 }
 
 void stopGate() {
+  setLedColor(BLACK);
   Serial.println("Stopping gate");
   sendMessage("Stopping");
   analogWrite(GATE_FORWARD_PWM_PIN, 0);
@@ -225,6 +288,11 @@ void loop() {
   listenForSignal();
   processPendingMessages();
 
+  if (ledOffTimestamp > 0 && (millis() - ledOffTimestamp) >= (ledTime * 1000)) {
+    setLedColor(BLACK);
+    ledOffTimestamp = 0;
+  }
+
   // lock gate after unlockTime seconds from being unlocked
   if (currentState == OPENING && !isLocked && ((millis() - unlockTimestamp) >= (unlockTime * 1000))) {
     lock();
@@ -239,6 +307,7 @@ void loop() {
   // check for gate limits
   if (currentState == OPENING && digitalRead(GATE_LIMIT_OPEN_PIN) == LOW) {  // pull-up
     stopGate();
+    setLedColor(YELLOW);
     Serial.println("Gate open limit reached");
     Serial.printf("Closing in %d seconds\n", stayOpenTime);
     currentState = OPEN;
@@ -281,6 +350,7 @@ void listenForSignal() {  // check for remote trigger
       sendMessage(REQUEST_FROM + addressStr);
       handleButtonPress();
     } else {
+      timedLed(RED);
       sendMessage(REQUEST_DENIED + addressStr);
     }
   }

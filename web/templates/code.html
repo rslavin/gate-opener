@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Enter Code</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    {% include 'sidebar.html' %}
+    <h1>Enter Code to Open Gate</h1>
+    <form id="codeForm">
+        <label for="code">Code:</label>
+        <input type="text" id="code" name="code" value="{{ code }}" required>
+        <button type="submit">Open Gate</button>
+    </form>
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('codeForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const code = document.getElementById('code').value;
+
+            fetch(`/code/${code}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                let message = data.message;
+                if (data.time_left) {
+                    message += ` Time left: ${data.time_left}`;
+                }
+                document.getElementById('message').textContent = message;
+            })
+            .catch(error => {
+                document.getElementById('message').textContent = 'Error: Could not open the gate';
+            });
+        });
+    </script>
+</body>
+</html>
+

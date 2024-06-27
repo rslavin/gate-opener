@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    {% include 'sidebar.html' %}
+    <h1>Welcome, {{ current_user.username }}</h1>
+    <div class="button-container">
+        <button id="openGateButton">Open Gate</button>
+    </div>
+    <div id="message"></div>
+
+    <script>
+        document.getElementById('openGateButton').addEventListener('click', function() {
+            fetch('/open', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                const button = document.getElementById('openGateButton');
+                const message = document.getElementById('message');
+                if (data.message === 'Gate opened') {
+                    button.style.backgroundColor = 'green';
+                    message.textContent = data.message;
+                } else {
+                    button.style.backgroundColor = 'red';
+                    message.textContent = 'Error: Could not open the gate';
+                }
+                setTimeout(() => {
+                    button.style.backgroundColor = '';
+                    message.textContent = '';
+                }, 2000);
+            })
+            .catch(error => {
+                const button = document.getElementById('openGateButton');
+                button.style.backgroundColor = 'red';
+                document.getElementById('message').textContent = 'Error: Could not open the gate';
+                setTimeout(() => {
+                    button.style.backgroundColor = '';
+                    document.getElementById('message').textContent = '';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
+
