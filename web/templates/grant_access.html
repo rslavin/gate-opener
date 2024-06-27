@@ -13,7 +13,7 @@
             <div class="modal-body">
                 <strong>Code:</strong> <a href="{{ url_for('main.code_page', code=new_token.code, _external=True) }}">{{
                 new_token.code }}</a> <br>
-                <strong>Link:</strong> <a href="{{ url_for('main.code_page', _external=True) }}">{{ url_for('main.code_page', code=new_token.code, _external=True) }}</a> <br>
+                <strong>Link:</strong> <a href="{{ url_for('main.code_page', code=new_token.code, _external=True) }}">{{ url_for('main.code_page', code=new_token.code, _external=True) }}</a> <br>
                 {% if new_token.note %}
                 <strong>Note:</strong> {{ new_token.note }} <br>
                 {% endif %}
