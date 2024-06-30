@@ -222,6 +222,7 @@ void lock() {
 
 void openGate() {
   if (digitalRead(GATE_LIMIT_OPEN_PIN) != LOW) {
+    unlock();
     setLedColor(GREEN);
     Serial.println("Opening gate");
     sendMessage("Opening");
@@ -271,9 +272,7 @@ void handleButtonPress() {
         closeGate();
       break;
     case CLOSED:
-      unlock();
       openGate();
-      Serial.printf("Unlocking for %s seconds\n", String(unlockTime));
       break;
     case CLOSING:
     case OPENING:
