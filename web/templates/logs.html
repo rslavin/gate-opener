@@ -1,0 +1,18 @@
+{% include 'header.html' %}
+</head>
+<body>
+    {% include 'sidebar.html' %}
+    <div class="container mt-5">
+        <h1>Log Entries</h1>
+        <ul class="list-group">
+            {% for entry in log_entries %}
+            <li class="list-group-item">
+                <strong>User:</strong> {{ entry.user }} <br>
+                <strong>Timestamp:</strong> {{ entry.create_at|datetime}} CT<br>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+</body>
+</html>

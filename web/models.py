@@ -22,3 +22,16 @@ class Token(db.Model):
     creator = db.relationship('User', backref='created_codes', lazy=True)
     expires_at = db.Column(db.DateTime, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow(), nullable=False)
+
+    def __str__(self):
+        creator_username = self.creator.username if self.creator else "Unknown"
+        return_str = f"'{self.code}' created by {creator_username}"
+        if self.note:
+            return f"{return_str} with note: '{self.note}'"
+        return return_str
+
+class LogEntry(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user = db.Column(db.String(20), unique=False, nullable=False)
+    create_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, nullable=False)
+

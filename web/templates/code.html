@@ -17,6 +17,18 @@
     </div>
 
     <script>
+        function formatTime(timeLeft) {
+            const daysMatch = timeLeft.match(/(\d+) days/);
+            const hoursMatch = timeLeft.match(/(\d+):/);
+            const minutesMatch = timeLeft.match(/:(\d+):/);
+
+            const days = daysMatch ? daysMatch[1] : 0;
+            const hours = hoursMatch ? hoursMatch[1] : 0;
+            const minutes = minutesMatch ? minutesMatch[1] : 0;
+
+            return `${days} days, ${hours} hours, ${minutes} minutes`;
+        }
+
         document.getElementById('codeForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const code = document.getElementById('code').value;
@@ -31,9 +43,10 @@
             .then(data => {
                 let message = data.message;
                 if (data.time_left) {
-                    message += ` Time left: ${data.time_left}`;
+                    const formattedTime = formatTime(`${data.time_left}`)
+                    message += " - Token expires:" + formattedTime;
                 }
-                document.getElementById('message').textContent = message;
+                document.getElementById('message').htmlContent = message;
             })
             .catch(error => {
                 document.getElementById('message').textContent = 'Error: Could not open the gate';

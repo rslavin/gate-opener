@@ -3,6 +3,7 @@ from extensions import db, bcrypt, login_manager, migrate
 from config import Config
 from routes import main_blueprint, auth_blueprint, admin_blueprint
 import logging
+import pytz
 from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
@@ -17,6 +18,17 @@ login_manager.login_view = 'auth.login'
 app.register_blueprint(main_blueprint)
 app.register_blueprint(auth_blueprint)
 app.register_blueprint(admin_blueprint)
+
+# Set the timezone
+timezone = pytz.timezone('US/Central')
+
+# Convert datetime to the specified timezone
+@app.template_filter('datetime')
+def format_datetime(value):
+    if value.tzinfo is None:
+        value = pytz.utc.localize(value)
+    local_time = value.astimezone(timezone)
+    return local_time.strftime('%B %d, %Y - %I:%M:%S%p')
 
 @login_manager.user_loader
 def load_user(user_id):

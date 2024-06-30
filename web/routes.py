@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, render_template, redirect, url_for
 from flask_login import login_user, login_required, logout_user, current_user
-from models import User, Token, Role
+from models import User, Token, Role, LogEntry
 from extensions import db, bcrypt
 from decorators import role_required, roles_required
 import datetime
@@ -20,7 +20,7 @@ def home():
 @main_blueprint.route('/open', methods=['POST'])
 @login_required
 def open():
-    response = open_gate()
+    response = open_gate(current_user.username)
     return jsonify({'message': 'Gate opened', 'response': response}), 200
 
 @main_blueprint.route('/grant_access', methods=['GET', 'POST'])
@@ -57,7 +57,7 @@ def code_page(code=''):
     if request.method == 'POST':
         token = Token.query.filter_by(code=code).first()
         if token and token.expires_at > datetime.datetime.utcnow():
-            response = open_gate()
+            response = open_gate(token.__str__())
             remaining_time = token.expires_at - datetime.datetime.utcnow()
             return jsonify({'message': 'Gate opened', 'response': response, 'time_left': str(remaining_time)}), 200
         return jsonify({'message': 'Invalid or expired code'}), 401
@@ -119,3 +119,10 @@ def change_role(user_id):
         user.role = Role(request.form['role'])
         db.session.commit()
     return redirect(url_for('admin.admin'))
+
+@admin_blueprint.route('/logs', methods=['GET'])
+@role_required(Role.ADMIN)
+@login_required
+def logs():
+    log_entries = LogEntry.query.order_by(LogEntry.create_at.desc()).all()
+    return render_template('logs.html', log_entries=log_entries)

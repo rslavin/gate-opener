@@ -1,7 +1,14 @@
 import serial
 import time
 
-def open_gate():
+from models import LogEntry
+from extensions import db
+
+def open_gate(user_note=''):
+    access_code = LogEntry(user=user_note)
+    db.session.add(access_code)
+    db.session.commit()
+
     address_response = send_uart_message("AT+ADDRESS=1313")
     send_response = send_uart_message("AT+SEND=1301,1,1")
     return send_response

@@ -1,7 +1,9 @@
-from app import app, db, User, Role
+from app import app, db
+from models import User, Role
 from flask_bcrypt import Bcrypt
 
 bcrypt = Bcrypt(app)
+
 
 def create_user(username, password):
     with app.app_context():
@@ -10,6 +12,7 @@ def create_user(username, password):
         db.session.add(user)
         db.session.commit()
         print(f"Admin user {username} created successfully.")
+
 
 if __name__ == "__main__":
     username = input("Enter username: ")
